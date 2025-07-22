@@ -1,0 +1,16 @@
+# Core ML & Data
+scikit-learn
+pandas
+numpy
+joblib
+DVC
+
+# Experiment Tracking
+mlflow
+
+# API
+fastapi
+
+# Testing & Linting
+pytest
+
