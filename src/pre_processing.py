@@ -4,17 +4,14 @@ import pandas as pd
 import os
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
-
+raw_data_dir = os.path.join("Data", "raw")
 raw_data_path = os.path.join("Data", "raw", "iris.csv")
 processed_data_dir = os.path.join("Data", "processed")
 processed_data_path = os.path.join(processed_data_dir, "processed_iris.csv")
 
 # Create the output directory if it doesn't exist
+os.makedirs(raw_data_dir, exist_ok=True)
 os.makedirs(processed_data_dir, exist_ok=True)
-
-# Load data
-df = pd.read_csv(raw_data_path)
-
 
 # Load dataset
 iris = load_iris()
