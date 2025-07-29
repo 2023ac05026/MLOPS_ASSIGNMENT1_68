@@ -1,7 +1,19 @@
 
 from sklearn.datasets import load_iris
 import pandas as pd
+import os
 from sklearn.preprocessing import LabelEncoder, StandardScaler
+
+
+raw_data_path = os.path.join("Data", "raw", "iris.csv")
+processed_data_dir = os.path.join("Data", "processed")
+processed_data_path = os.path.join(processed_data_dir, "processed_iris.csv")
+
+# Create the output directory if it doesn't exist
+os.makedirs(processed_data_dir, exist_ok=True)
+
+# Load data
+df = pd.read_csv(raw_data_path)
 
 
 # Load dataset
@@ -10,7 +22,7 @@ df = pd.DataFrame(iris.data, columns=iris.feature_names)
 df['target'] = iris.target
 
 # Save CSV
-df.to_csv(".\\Data\\raw\\iris.csv", index=False)
+df.to_csv(raw_data_path, index=False)
 
 print("Iris dataset saved to data/iris.csv")
 
@@ -46,6 +58,6 @@ features_scaled = scaler.fit_transform(df[iris.feature_names])
 df_scaled = pd.DataFrame(features_scaled, columns=iris.feature_names)
 df_scaled['target'] = df['target_encoded']
 
-df_scaled.to_csv(".\\Data\\processed\\processed_iris.csv",index=False)
+df_scaled.to_csv(processed_data_path,index=False)
 
 print("processed data saved to \\Data\\processed\\processed_iris.csv")

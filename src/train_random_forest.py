@@ -4,6 +4,7 @@ from sklearn.ensemble import RandomForestClassifier # Changed import
 from sklearn.metrics import accuracy_score
 import mlflow
 import mlflow.sklearn
+import os
 
 import matplotlib
 matplotlib.use('Agg')  # Use non-GUI backend
@@ -15,7 +16,10 @@ mlflow.autolog()
 with mlflow.start_run():
 
 # Load Data
-    df = pd.read_csv("Data/processed/processed_iris.csv")
+    processed_data_dir = os.path.join("Data", "processed")
+    processed_data_path = os.path.join(processed_data_dir, "processed_iris.csv")
+    df = pd.read_csv(processed_data_path)
+    df = pd.read_csv(processed_data_path)
     X = df.drop("target", axis=1)
     y = df["target"]
 
