@@ -3,12 +3,14 @@ scikit-learn
 pandas
 numpy
 joblib
-DVC
+dvc[all]
+ipykernel
 
 # Experiment Tracking
 mlflow
 
 # API
+
 fastapi
 
 # Testing & Linting

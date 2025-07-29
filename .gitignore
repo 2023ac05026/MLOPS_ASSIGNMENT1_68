@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 mlruns/
 *.log
+Data/processed/
+!Data/processed/*.dvc
+Data/raw/
+!Data/raw/*.dvc
