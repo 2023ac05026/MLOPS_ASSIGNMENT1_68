@@ -1,0 +1,49 @@
+# .github/workflows/ci-cd.yml
+
+name: ML Model CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main  # Or your default branch
+
+jobs:
+  train-and-register-model:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Cache MLflow runs
+        uses: actions/cache@v3
+        with:
+          path: mlruns
+          key: ${{ runner.os }}-mlflow-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-mlflow-
+
+      - name: Set MLflow Tracking URI
+        run: echo "MLFLOW_TRACKING_URI=${{ github.workspace }}/mlruns" >> $GITHUB_ENV
+
+      - name: Run Data Processing
+        run: python src/pre_processing.py
+
+      - name: Run Logistic Regression Training
+        run: python scripts/train_logistic_regression.py
+
+      - name: Run Random Forest Training
+        run: python src/train_random_forest.py
+      
+      - name: Find, Compare, and Register Best Model
+        run: python src/register_best_model.py
