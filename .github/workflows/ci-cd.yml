@@ -40,7 +40,7 @@ jobs:
         run: python src/pre_processing.py
 
       - name: Run Logistic Regression Training
-        run: python scripts/train_logistic_regression.py
+        run: python src/train_logistic_regression.py
 
       - name: Run Random Forest Training
         run: python src/train_random_forest.py
