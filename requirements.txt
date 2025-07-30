@@ -10,8 +10,7 @@ ipykernel
 mlflow
 
 # API
-
-fastapi
+flask
 
 # Testing & Linting
 pytest
