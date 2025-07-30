@@ -1,4 +1,6 @@
 [core]
-    remote = gdrive_remote
-['remote "gdrive_remote"']
-    url = https://drive.google.com/drive/u/0/folders/1gOM68mZjwvTQVuems5qSMFhuH5o9gIpT
+    remote = raw_remote
+['remote "features_remote"']
+    url = E:\coursework\sem 3\MLOPS\Assignments\MLOPS_ASSIGNMENT1_68\Data\processed
+['remote "raw_remote"']
+    url = E:\coursework\sem 3\MLOPS\Assignments\MLOPS_ASSIGNMENT1_68\Data\raw
