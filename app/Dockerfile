@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 5001
 
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5001"]
+CMD ["flask", "run", "--app", "Iris_predictor.py", "--host", "0.0.0.0", "--port", "5001"]
