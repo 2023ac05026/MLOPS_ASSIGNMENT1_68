@@ -4,6 +4,7 @@ import mlflow
 import pandas as pd
 from flask import Flask, request, jsonify, render_template
 from pathlib import Path
+import joblib
 
 # --- Create a robust, OS-independent file URI for MLflow ---
 # Get the absolute path to the mlruns directory, which is one level up from the app directory
@@ -18,7 +19,7 @@ mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 REGISTERED_MODEL_NAME = "iris-classifier"
 MODEL_STAGE = "None"  # Or "Staging", "Production" if you use stages
 
-print(f"Loading model '{REGISTERED_MODEL_NAME}' from tracking URI: {MLFLOW_TRACKING_URI}")
+'''print(f"Loading model '{REGISTERED_MODEL_NAME}' from tracking URI: {MLFLOW_TRACKING_URI}")
 try:
     # Use the 'models:/' URI to load the latest version for the given stage
     model_uri = f"models:/{REGISTERED_MODEL_NAME}/{MODEL_STAGE}"
@@ -27,6 +28,20 @@ try:
 except Exception as e:
     print(f"Error loading model: {e}")
     # Exit if the model fails to load, as the app cannot function
+    exit()'''
+# --- Load the standalone model file ---
+# The path is relative to the app's location inside the container
+
+# Get the directory where the current script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+# Construct the absolute path to the model file
+MODEL_PATH = os.path.join(script_dir, 'models', 'model.joblib')
+
+try:
+    loaded_model = joblib.load(MODEL_PATH)
+    print("Model loaded successfully.")
+except Exception as e:
+    print(f"Error loading model: {e}")
     exit()
 
 # Define the target names for interpreting the prediction results
