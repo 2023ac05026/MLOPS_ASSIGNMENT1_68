@@ -10,6 +10,10 @@ COPY . .
 
 EXPOSE 5001
 
-# This command explicitly tells Flask to run the 'app' object
-# from the 'Iris_predictor.py' file.
-CMD ["flask", "run", "--app", "Iris_predictor.py", "--host", "0.0.0.0", "--port", "5001"]
+# Set the FLASK_APP environment variable to point to your main file.
+# This is the most reliable way to specify the application.
+ENV FLASK_APP=Iris_predictor.py
+
+# The command now simply runs flask, which will automatically pick up
+# the FLASK_APP variable.
+CMD ["flask", "run", "--host", "0.0.0.0", "--port", "5001"]
