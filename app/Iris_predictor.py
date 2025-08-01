@@ -1,27 +1,24 @@
+# app/Iris_predictor.py
 import os
 import mlflow
 import pandas as pd
 from flask import Flask, request, jsonify, render_template
-from pathlib import Path # Import the Path object
+from pathlib import Path
 
-# --- FIX: Use pathlib to create a robust, OS-independent file URI ---
-
-# Get the absolute path to the mlruns directory
+# --- Create a robust, OS-independent file URI for MLflow ---
+# Get the absolute path to the mlruns directory, which is one level up from the app directory
 mlruns_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'mlruns'))
-
-# Convert the absolute path to a URI
-# This works correctly on both Windows and Linux/macOS
+# Convert the path to a file URI that works on all operating systems
 MLFLOW_TRACKING_URI = Path(mlruns_dir).as_uri()
-
 # Set the MLflow tracking URI
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
-# Name of the registered model
+# --- Model Loading ---
+# Name of the registered model in the MLflow Model Registry
 REGISTERED_MODEL_NAME = "iris-classifier"
-MODEL_STAGE = "None" # Or "Staging", "Production" if you use stages
+MODEL_STAGE = "None"  # Or "Staging", "Production" if you use stages
 
-# Load the model from the Model Registry
-print(f"Loading model '{REGISTERED_MODEL_NAME}' from {MLFLOW_TRACKING_URI}")
+print(f"Loading model '{REGISTERED_MODEL_NAME}' from tracking URI: {MLFLOW_TRACKING_URI}")
 try:
     # Use the 'models:/' URI to load the latest version for the given stage
     model_uri = f"models:/{REGISTERED_MODEL_NAME}/{MODEL_STAGE}"
@@ -29,15 +26,16 @@ try:
     print("Model loaded successfully.")
 except Exception as e:
     print(f"Error loading model: {e}")
-    # Exit if model fails to load
+    # Exit if the model fails to load, as the app cannot function
     exit()
 
-# Define the target names for interpreting the prediction
+# Define the target names for interpreting the prediction results
 TARGET_NAMES = ['setosa', 'versicolor', 'virginica']
 
-# Initialize Flask app
+# Initialize the Flask application
 app = Flask(__name__)
 
+# --- Routes ---
 @app.route('/')
 def home():
     """Render the home page with the input form."""
@@ -45,7 +43,7 @@ def home():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    """Handle prediction requests."""
+    """Handle prediction requests from the web form."""
     try:
         # Get data from the POST request form
         sepal_length = float(request.form['sepal_length'])
@@ -53,8 +51,7 @@ def predict():
         petal_length = float(request.form['petal_length'])
         petal_width = float(request.form['petal_width'])
 
-        # --- FIX: Use column names that match the model's schema ---
-        # Create a DataFrame for the model
+        # Create a pandas DataFrame with the correct column names for the model
         input_data = pd.DataFrame({
             'sepal length (cm)': [sepal_length],
             'sepal width (cm)': [sepal_width],
@@ -62,33 +59,31 @@ def predict():
             'petal width (cm)': [petal_width]
         })
 
-        # Make a prediction
+        # Make a prediction using the loaded model
         prediction_code = loaded_model.predict(input_data)[0]
         predicted_species = TARGET_NAMES[prediction_code]
 
-        # Return the result to the HTML page
-        return render_template('index.html', 
+        # Return the result to the HTML page for display
+        return render_template('index.html',
                                prediction_text=f'Predicted Species: {predicted_species}')
 
     except Exception as e:
-        return render_template('index.html', 
+        # Handle any errors during prediction
+        return render_template('index.html',
                                prediction_text=f'Error: {str(e)}')
 
 @app.route('/api/predict', methods=['POST'])
 def api_predict():
     """Handle API prediction requests (for programmatic use)."""
     try:
-        # Get JSON data from the request
+        # Get JSON data from the request body
         data = request.get_json(force=True)
-        
-        # --- FIX: Ensure the DataFrame created from JSON uses correct column names ---
-        # The input JSON keys should match this expected format
         input_data = pd.DataFrame(data)
 
-        # Make prediction
+        # Make predictions
         prediction = loaded_model.predict(input_data)
         
-        # Convert prediction to a list of species names
+        # Convert numeric predictions to species names
         output = [TARGET_NAMES[p] for p in prediction]
         
         return jsonify(output)
@@ -96,6 +91,8 @@ def api_predict():
     except Exception as e:
         return jsonify({'error': str(e)})
 
+# This block allows the script to be run directly with `python Iris_predictor.py`
+# for local testing. It is ignored when run with `flask run`.
 if __name__ == '__main__':
     # Run the app on host 0.0.0.0 to be accessible from outside the container
     app.run(host='0.0.0.0', port=5001, debug=True)
