@@ -1,8 +1,8 @@
 -- app/schema.sql
-DROP TABLE IF EXISTS predictions;
-DROP TABLE IF EXISTS metrics;
 
-CREATE TABLE predictions (
+-- This table stores logs for prediction requests.
+-- 'IF NOT EXISTS' prevents an error if the table already exists.
+CREATE TABLE IF NOT EXISTS predictions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
   request_type TEXT NOT NULL,
@@ -11,7 +11,9 @@ CREATE TABLE predictions (
   status TEXT NOT NULL
 );
 
-CREATE TABLE metrics (
+-- This table can store historical metrics data.
+-- 'IF NOT EXISTS' prevents an error if the table already exists.
+CREATE TABLE IF NOT EXISTS metrics (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
   cpu_percent REAL NOT NULL,

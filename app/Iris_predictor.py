@@ -4,10 +4,17 @@ import pandas as pd
 from flask import Flask, request, jsonify, render_template, g
 import joblib
 import psutil
-import database # Import the new database module
+#from . import database # Use a relative import to find the database module in the same directory
+
 from collections import deque
 import time
 
+try:
+    # This works when running as a package (e.g., with 'flask run' or in Docker)
+    from . import database
+except ImportError:
+    # This works when running the script directly (e.g., 'python app/Iris_predictor.py')
+    import database
 
 # --- Application Setup ---
 app = Flask(__name__)
@@ -51,6 +58,9 @@ def after_request_timing(response):
 # --- Routes ---
 @app.route('/')
 def home():
+    print("Running first-request initialization...")
+    database.init_db()
+    print("Database initialization complete.")
     """Render the home page with the input form."""
     return render_template('index.html')
 

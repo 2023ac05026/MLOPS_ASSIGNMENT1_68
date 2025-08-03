@@ -25,11 +25,16 @@ def close_db(e=None):
         db.close()
 
 def init_db():
-    """Initializes the database from the schema.sql file."""
+    """
+    Initializes the database by running the schema script.
+    The schema uses 'CREATE TABLE IF NOT EXISTS' to be idempotent,
+    so it's safe to run this every time the app starts.
+    """
     db = get_db()
     with current_app.open_resource('schema.sql') as f:
         db.executescript(f.read().decode('utf8'))
-
+    print("Database initialization check complete.")
+   
 def log_prediction(request_type, request_body, prediction_output, status='SUCCESS'):
     """Logs a prediction request and its outcome to the SQLite database."""
     try:
