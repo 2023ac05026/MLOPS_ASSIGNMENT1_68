@@ -1,85 +1,106 @@
-# tests/test_iris_predictor.py
 import pytest
 from unittest.mock import patch, MagicMock
 import numpy as np
+import json
 
-# We import the app here. The model loading will be patched during the tests.
-from app.Iris_predictor import app
+# --- Mocking Setup ---
+# 1. Create a mock model object that will be used in all tests.
+mock_model_instance = MagicMock()
 
+# 2. This is the corrected patch. We target 'joblib.load' directly.
+#    When `app.Iris_predictor` is imported, its call to `joblib.load()` will be
+#    intercepted by our patch.
+with patch('joblib.load', return_value=mock_model_instance):
+    from app.Iris_predictor import app
+
+# 3. Create a test client using a pytest fixture. This setup runs once per test function.
 @pytest.fixture
 def client():
-    """A pytest fixture to create a test client for the Flask app."""
+    # Reset the mock before each test to ensure test isolation
+    mock_model_instance.reset_mock()
     app.config['TESTING'] = True
     with app.test_client() as client:
         yield client
 
-@pytest.fixture
-def mock_model():
-    """A pytest fixture that creates a mock of the loaded ML model."""
-    mock_model_instance = MagicMock()
-    # Configure its `predict` method to always return class 1 ('versicolor')
-    mock_model_instance.predict.return_value = np.array([1])
-    return mock_model_instance
+# --- Tests ---
 
-@patch('app.Iris_predictor.joblib.load')
-def test_home_page_loads(mock_joblib_load, client):
+def test_home_route(client):
     """
-    Test Case 1: Verifies that the home page ('/') loads successfully.
+    Tests if the home page ('/') loads correctly.
     """
     response = client.get('/')
     assert response.status_code == 200
     assert b"Iris Species Predictor" in response.data
 
-@patch('app.Iris_predictor.loaded_model')
-def test_successful_html_prediction(mock_loaded_model, client, mock_model):
+def test_predict_endpoint(client):
     """
-    Test Case 2: Simulates a successful form submission to the /predict endpoint.
+    Tests the /predict endpoint with valid form data.
     """
-    # Replace the app's actual model with our mock model for this test
-    mock_loaded_model.predict.return_value = mock_model.predict.return_value
+    # Configure the mock to return class '1' (versicolor) for this test
+    mock_model_instance.predict.return_value = np.array([1])
+    test_data = {
+        'sepal_length': 5.1,
+        'sepal_width': 3.5,
+        'petal_length': 1.4,
+        'petal_width': 0.2
+    }
+    response = client.post('/predict', data=test_data)
 
-    response = client.post('/predict', data={
-        'sepal_length': '5.1',
-        'sepal_width': '3.5',
-        'petal_length': '1.4',
-        'petal_width': '0.2'
-    })
     assert response.status_code == 200
-    # The mock model returns class 1, which is 'versicolor' (lowercase)
-    assert b"Predicted Species: versicolor" in response.data
+    mock_model_instance.predict.assert_called_once()
+    assert b'Predicted Species: versicolor' in response.data
 
-@patch('app.Iris_predictor.joblib.load')
-def test_invalid_data_html_prediction(mock_joblib_load, client):
+def test_predict_endpoint_with_invalid_input(client):
     """
-    Test Case 3: Simulates a form submission with invalid (non-numeric) data.
+    Tests the /predict endpoint with non-numeric (invalid) form data.
     """
-    response = client.post('/predict', data={
-        'sepal_length': 'invalid',
-        'sepal_width': '3.5',
-        'petal_length': '1.4',
-        'petal_width': '0.2'
-    })
+    test_data = {
+        'sepal_length': 'invalid_data',
+        'sepal_width': 3.5,
+        'petal_length': 1.4,
+        'petal_width': 0.2
+    }
+    response = client.post('/predict', data=test_data)
+
     assert response.status_code == 200
-    assert b"Error:" in response.data
+    # The model's predict method should not be called with invalid input
+    mock_model_instance.predict.assert_not_called()
+    assert b'Error: could not convert string to float' in response.data
 
-@patch('app.Iris_predictor.loaded_model')
-def test_successful_api_prediction(mock_loaded_model, client, mock_model):
+def test_api_predict_endpoint(client):
     """
-    Test Case 4: Tests the /api/predict endpoint with valid JSON data.
+    Tests the /api/predict endpoint with a single valid JSON object.
     """
-    # Replace the app's actual model with our mock model for this test
-    mock_loaded_model.predict.return_value = mock_model.predict.return_value
+    # Configure the mock to return class '1' (versicolor) for this test
+    mock_model_instance.predict.return_value = np.array([1])
+    test_data = {
+        'sepal length (cm)': [5.1],
+        'sepal width (cm)': [3.5],
+        'petal length (cm)': [1.4],
+        'petal width (cm)': [0.2]
+    }
+    response = client.post('/api/predict', json=test_data)
+    json_data = response.get_json()
 
-    json_data = [{'sepal length (cm)': 5.1, 'sepal width (cm)': 3.5, 'petal length (cm)': 1.4, 'petal width (cm)': 0.2}]
-    response = client.post('/api/predict', json=json_data)
     assert response.status_code == 200
-    assert response.get_json() == ['versicolor']
+    mock_model_instance.predict.assert_called_once()
+    assert json_data == ['versicolor']
 
-@patch('app.Iris_predictor.joblib.load')
-def test_api_prediction_with_bad_data(mock_joblib_load, client):
+def test_api_predict_with_multiple_inputs(client):
     """
-    Test Case 5: Tests the API endpoint with malformed JSON to ensure it handles errors.
+    Tests the /api/predict endpoint with a batch of multiple JSON objects.
     """
-    json_data = [{'wrong_column': 1.0}]
-    response = client.post('/api/predict', json=json_data)
-    assert 'error' in response.get_json()
+    # Configure the mock to return predictions for two inputs: 'setosa' (0) and 'virginica' (2)
+    mock_model_instance.predict.return_value = np.array([0, 2])
+    test_data = {
+        'sepal length (cm)': [5.1, 7.0],
+        'sepal width (cm)': [3.5, 3.2],
+        'petal length (cm)': [1.4, 4.7],
+        'petal width (cm)': [0.2, 1.4]
+    }
+    response = client.post('/api/predict', json=test_data)
+    json_data = response.get_json()
+
+    assert response.status_code == 200
+    mock_model_instance.predict.assert_called_once()
+    assert json_data == ['setosa', 'virginica']
