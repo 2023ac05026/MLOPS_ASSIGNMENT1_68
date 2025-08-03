@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Metrics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">System Metrics</h1>
+            <a href="/" class="text-blue-600 hover:text-blue-800 font-medium transition-colors"> &larr; Back to Predictor</a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <!-- CPU Utilization Card -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-lg font-semibold text-gray-700 mb-2">CPU Utilization</h2>
+                <p class="text-4xl font-bold text-gray-900">{{ metrics.cpu_percent }}%</p>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-4">
+                    <div class="bg-blue-600 h-2.5 rounded-full" style="width: {{ metrics.cpu_percent }}%"></div>
+                </div>
+            </div>
+
+            <!-- Memory Usage Card -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-lg font-semibold text-gray-700 mb-2">Memory Usage</h2>
+                <p class="text-4xl font-bold text-gray-900">{{ metrics.memory.percent }}%</p>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-4">
+                    <div class="bg-green-600 h-2.5 rounded-full" style="width: {{ metrics.memory.percent }}%"></div>
+                </div>
+                <div class="text-sm text-gray-500 mt-3">
+                    <p>Total: {{ '%.2f'|format(metrics.memory.total / (1024*1024*1024)) }} GB</p>
+                    <p>Used: {{ '%.2f'|format(metrics.memory.used / (1024*1024*1024)) }} GB</p>
+                    <p>Free: {{ '%.2f'|format(metrics.memory.free / (1024*1024*1024)) }} GB</p>
+                </div>
+            </div>
+
+            <!-- Disk Usage Card -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-lg font-semibold text-gray-700 mb-2">Disk Usage</h2>
+                <p class="text-4xl font-bold text-gray-900">{{ metrics.disk.percent }}%</p>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 mt-4">
+                    <div class="bg-purple-600 h-2.5 rounded-full" style="width: {{ metrics.disk.percent }}%"></div>
+                </div>
+                <div class="text-sm text-gray-500 mt-3">
+                    <p>Total: {{ '%.2f'|format(metrics.disk.total / (1024*1024*1024)) }} GB</p>
+                    <p>Used: {{ '%.2f'|format(metrics.disk.used / (1024*1024*1024)) }} GB</p>
+                    <p>Free: {{ '%.2f'|format(metrics.disk.free / (1024*1024*1024)) }} GB</p>
+                </div>
+            </div>
+            
+            <!-- Average Response Time Card -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-lg font-semibold text-gray-700 mb-2">Avg. Response Time</h2>
+                <p class="text-4xl font-bold text-gray-900">{{ '%.2f'|format(metrics.avg_response_time_ms) }}<span class="text-2xl text-gray-500 font-medium"> ms</span></p>
+                <p class="text-sm text-gray-500 mt-3">Average over the last 100 requests.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

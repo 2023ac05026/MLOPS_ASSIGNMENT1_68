@@ -1,0 +1,27 @@
+# docker-compose.yml
+version: '3.8'
+services:
+  mlflow_server:
+    build:
+      context: .
+      dockerfile: mlflow.Dockerfile
+    container_name: mlflow_server
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlruns
+    restart: always
+
+  iris_predictor_app:
+    image: 2023ac05026/iris-predictor-app:latest
+    volumes:
+      # THIS LINE CREATES THE SHARED PATH FOR THE APP
+      - ./app/models:/app/models
+    container_name: iris_predictor_app
+    ports:
+      - "5001:5001"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow_server:5000
+    depends_on:
+      - mlflow_server
+    restart: always

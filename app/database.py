@@ -52,6 +52,32 @@ def query_logs():
     ).fetchall()
     return [dict(log) for log in logs]
 
+def log_metrics(metrics_data):
+    """Logs a snapshot of system metrics to the database."""
+    try:
+        db = get_db()
+        db.execute(
+            'INSERT INTO metrics (cpu_percent, memory_percent, disk_percent, avg_response_time_ms) VALUES (?, ?, ?, ?)',
+            (
+                metrics_data['cpu_percent'],
+                metrics_data['memory']['percent'],
+                metrics_data['disk']['percent'],
+                metrics_data['avg_response_time_ms']
+            )
+        )
+        db.commit()
+    except Exception as e:
+        current_app.logger.error(f"Failed to log metrics to database: {e}")
+
+def query_metrics_history():
+    """Queries all historical metrics from the database."""
+    db = get_db()
+    metrics = db.execute(
+        'SELECT id, timestamp, cpu_percent, memory_percent, disk_percent, avg_response_time_ms '
+        'FROM metrics ORDER BY timestamp DESC'
+    ).fetchall()
+    return [dict(m) for m in metrics]
+
 def init_app(app):
     """Register database functions with the Flask app."""
     app.teardown_appcontext(close_db)

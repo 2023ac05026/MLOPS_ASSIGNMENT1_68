@@ -5,6 +5,7 @@ numpy
 joblib
 dvc[all]
 ipykernel
+psutil
 
 # Experiment Tracking
 mlflow
