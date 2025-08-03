@@ -19,7 +19,7 @@ mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 REGISTERED_MODEL_NAME = "iris-classifier"
 MODEL_STAGE = "None"  # Or "Staging", "Production" if you use stages
 
-'''print(f"Loading model '{REGISTERED_MODEL_NAME}' from tracking URI: {MLFLOW_TRACKING_URI}")
+print(f"Loading model '{REGISTERED_MODEL_NAME}' from tracking URI: {MLFLOW_TRACKING_URI}")
 try:
     # Use the 'models:/' URI to load the latest version for the given stage
     model_uri = f"models:/{REGISTERED_MODEL_NAME}/{MODEL_STAGE}"
@@ -28,7 +28,7 @@ try:
 except Exception as e:
     print(f"Error loading model: {e}")
     # Exit if the model fails to load, as the app cannot function
-    exit()'''
+    exit()
 # --- Load the standalone model file ---
 # The path is relative to the app's location inside the container
 
