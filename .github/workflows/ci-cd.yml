@@ -1,5 +1,5 @@
 # .github/workflows/ci-cd.yml
-name: Build and Push Docker Images
+name: Test, Build, and Push Docker Images
 
 on:
   push:
@@ -7,7 +7,30 @@ on:
       - main
 
 jobs:
+  # New job to run the automated test suite
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest  # Ensure pytest is installed
+
+      - name: Run Pytest
+        run: pytest
+
+  # This job now depends on the 'test' job
   build-and-push:
+    needs: test  # This line makes it wait for the 'test' job to succeed
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -30,7 +53,7 @@ jobs:
       - name: Build and push Flask App image
         uses: docker/build-push-action@v5
         with:
-          context: ./app
+          context: .
           file: ./app/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/iris-predictor-app:latest

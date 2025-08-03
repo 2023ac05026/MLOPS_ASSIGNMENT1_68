@@ -1,89 +1,80 @@
 #!/usr/bin/env python
 import pandas as pd
 from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.ensemble import RandomForestClassifier # Changed import
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 import mlflow
 import mlflow.sklearn
 import os
-import matplotlib
 from pathlib import Path
 
-matplotlib.use('Agg')  # Use non-GUI backend
+def train_rf_model(data_path):
+    """
+    Loads data, trains a Random Forest model using GridSearchCV,
+    and logs the results with MLflow.
 
-# This logic allows the script to work both locally and in a container.
-if "MLFLOW_TRACKING_URI" in os.environ:
-    # Use the URI from the environment variable if it exists (for Docker)
-    mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
-    print(f"MLflow tracking URI set from environment variable: {os.environ['MLFLOW_TRACKING_URI']}")
-else:
-    # Otherwise, fall back to the local mlruns directory (for local development)
-    mlruns_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'mlruns'))
-    local_uri = Path(mlruns_dir).as_uri()
-    mlflow.set_tracking_uri(local_uri)
-    print(f"MLflow tracking URI set to local path: {local_uri}")
+    Args:
+        data_path (str): The path to the processed CSV data file.
 
-# Enable MLflow autologging
-mlflow.autolog()
+    Returns:
+        tuple: A tuple containing the best trained model and its test accuracy.
+    """
+    # Enable MLflow autologging for this training session
+    mlflow.autolog()
 
-with mlflow.start_run():
+    with mlflow.start_run() as run:
+        # Load Data
+        df = pd.read_csv(data_path)
+        X = df.drop("target", axis=1)
+        y = df["target"]
 
-# Load Data
-    processed_data_dir = os.path.join("Data", "processed")
-    processed_data_path = os.path.join(processed_data_dir, "processed_iris.csv")
-    df = pd.read_csv(processed_data_path)
-    df = pd.read_csv(processed_data_path)
-    X = df.drop("target", axis=1)
-    y = df["target"]
+        # Split Data
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Split Data (added random_state for reproducibility)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        # Define the parameter grid
+        param_grid = {
+            'n_estimators': [50, 100, 200],
+            'max_depth': [None, 10, 20],
+            'min_samples_split': [2, 5, 10],
+            'min_samples_leaf': [1, 2, 4]
+        }
 
-    # --- Start of GridSearchCV Modifications for Random Forest ---
+        # Instantiate and run GridSearchCV
+        model = RandomForestClassifier(random_state=42)
+        grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=5, n_jobs=-1, verbose=0)
+        print("Running GridSearchCV for RandomForestClassifier...")
+        grid_search.fit(X_train, y_train)
 
-    # 1. Define the parameter grid to search for Random Forest
-    # These are common and impactful hyperparameters for this algorithm.
-    param_grid = {
-        'n_estimators': [50, 100, 200],      # Number of trees in the forest
-        'max_depth': [None, 10, 20],         # Maximum depth of the tree
-        'min_samples_split': [2, 5, 10],     # Minimum number of samples required to split a node
-        'min_samples_leaf': [1, 2, 4]        # Minimum number of samples required at a leaf node
-    }
+        # Get best model and parameters
+        best_model = grid_search.best_estimator_
+        best_params = grid_search.best_params_
+        print("Best parameters found: ", best_params)
 
-    # 2. Instantiate the base model
-    model = RandomForestClassifier(random_state=42) # Changed model
+        # Evaluate the best model
+        y_pred = best_model.predict(X_test)
+        test_accuracy = accuracy_score(y_test, y_pred)
+        
+        # Manually log key metrics and params (autolog handles the rest)
+        mlflow.log_params(best_params)
+        mlflow.log_metric("test_set_accuracy", test_accuracy)
+        
+        print(f"Test Set Accuracy: {test_accuracy:.4f}")
+        print("Model saved to run:", run.info.run_id)
+        
+        return best_model, test_accuracy
 
-    # 3. Set up GridSearchCV
-    # The process is identical, just with the new model and param_grid.
-    grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=5, n_jobs=-1, verbose=1)
+if __name__ == '__main__':
+    # This block allows the script to be run directly
+    # Set up MLflow tracking URI
+    if "MLFLOW_TRACKING_URI" in os.environ:
+        mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
+    else:
+        mlruns_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'mlruns'))
+        local_uri = Path(mlruns_dir).as_uri()
+        mlflow.set_tracking_uri(local_uri)
 
-    # 4. Fit GridSearchCV to find the best model
-    print("Running GridSearchCV for RandomForestClassifier...")
-    grid_search.fit(X_train, y_train)
-
-    # 5. Get the best model and its parameters
-    best_model = grid_search.best_estimator_
-    best_params = grid_search.best_params_
-    print("Best parameters found: ", best_params)
-
-    # --- End of GridSearchCV Modifications ---
-
-
-    # --- MLflow Logging ---
-
-    # Log the best parameters found by the grid search
-    mlflow.log_params(best_params)
-
-    # Log the cross-validation score of the best model
-    mlflow.log_metric("best_cv_accuracy", grid_search.best_score_)
-
-    # Evaluate the best model on the held-out test set
-    y_pred = best_model.predict(X_test)
-    test_accuracy = accuracy_score(y_test, y_pred)
-    mlflow.log_metric("test_set_accuracy", test_accuracy)
-
-    # Log the final, tuned model with a descriptive name
-    mlflow.sklearn.log_model(best_model, "random_forest_tuned_model") # Changed model name
-
-    print(f"Test Set Accuracy: {test_accuracy:.4f}")
-    print("Model saved to run:", mlflow.active_run().info.run_id)
+    # Define the data path
+    processed_data_path = os.path.join("Data", "processed", "processed_iris.csv")
+    
+    # Run the training
+    train_rf_model(data_path=processed_data_path)
