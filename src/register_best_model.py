@@ -1,5 +1,8 @@
+#!/usr/bin/env python
 import mlflow
+import os
 import pandas as pd
+from pathlib import Path
 from mlflow.tracking import MlflowClient
 
 # --- Configuration ---
@@ -15,6 +18,16 @@ REGISTERED_MODEL_NAME = "iris-classifier"
 # --- Search for the Best Run ---
 
 print(f"Searching for the best run in experiment: '{EXPERIMENT_NAME}'")
+
+# --- Correctly Set MLflow Tracking URI ---
+if "MLFLOW_TRACKING_URI" in os.environ:
+    mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
+    print(f"MLflow tracking URI set from environment variable: {os.environ['MLFLOW_TRACKING_URI']}")
+else:
+    mlruns_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'mlruns'))
+    local_uri = Path(mlruns_dir).as_uri()
+    mlflow.set_tracking_uri(local_uri)
+    print(f"MLflow tracking URI set to local path: {local_uri}")
 
 # Initialize the MLflow client
 client = MlflowClient()

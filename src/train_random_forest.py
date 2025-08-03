@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import pandas as pd
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.ensemble import RandomForestClassifier # Changed import
@@ -5,10 +6,22 @@ from sklearn.metrics import accuracy_score
 import mlflow
 import mlflow.sklearn
 import os
-
 import matplotlib
+from pathlib import Path
+
 matplotlib.use('Agg')  # Use non-GUI backend
 
+# This logic allows the script to work both locally and in a container.
+if "MLFLOW_TRACKING_URI" in os.environ:
+    # Use the URI from the environment variable if it exists (for Docker)
+    mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
+    print(f"MLflow tracking URI set from environment variable: {os.environ['MLFLOW_TRACKING_URI']}")
+else:
+    # Otherwise, fall back to the local mlruns directory (for local development)
+    mlruns_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'mlruns'))
+    local_uri = Path(mlruns_dir).as_uri()
+    mlflow.set_tracking_uri(local_uri)
+    print(f"MLflow tracking URI set to local path: {local_uri}")
 
 # Enable MLflow autologging
 mlflow.autolog()

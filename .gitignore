@@ -7,3 +7,4 @@ mlruns/
 !Data/processed/*.dvc
 #Data/raw/
 !Data/raw/*.dvc
+app/models/

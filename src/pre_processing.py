@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python
 from sklearn.datasets import load_iris
 import pandas as pd
 import os

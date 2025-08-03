@@ -1,4 +1,5 @@
-# src/export_best_model.py
+#!/usr/bin/env python
+
 import mlflow
 import joblib
 import os
@@ -10,11 +11,26 @@ print("--- Starting Model Export ---")
 REGISTERED_MODEL_NAME = "iris-classifier"
 MODEL_STAGE = "None"
 
+'''if "MLFLOW_TRACKING_URI" in os.environ:
+    mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
+
 # --- Set MLflow Tracking URI ---
 mlruns_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'mlruns'))
 MLFLOW_TRACKING_URI = Path(mlruns_dir).as_uri()
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-print(f"MLflow tracking URI set to: {MLFLOW_TRACKING_URI}")
+print(f"MLflow tracking URI set to: {MLFLOW_TRACKING_URI}")'''
+
+# This logic allows the script to work both locally and in a container.
+if "MLFLOW_TRACKING_URI" in os.environ:
+    # Use the URI from the environment variable if it exists (for Docker)
+    mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
+    print(f"MLflow tracking URI set from environment variable: {os.environ['MLFLOW_TRACKING_URI']}")
+else:
+    # Otherwise, fall back to the local mlruns directory (for local development)
+    mlruns_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'mlruns'))
+    local_uri = Path(mlruns_dir).as_uri()
+    mlflow.set_tracking_uri(local_uri)
+    print(f"MLflow tracking URI set to local path: {local_uri}")
 
 # --- Load Model from MLflow ---
 try:

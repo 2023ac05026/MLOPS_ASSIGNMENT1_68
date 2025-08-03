@@ -1,35 +1,26 @@
 # docker-compose.yml
 version: '3.8'
-
 services:
-  # Service 1: The MLflow Tracking Server
   mlflow_server:
-    image: python:3.11-slim
+    build:
+      context: .
+      dockerfile: mlflow.Dockerfile
     container_name: mlflow_server
-    command: >
-      sh -c "pip install mlflow boto3 sqlalchemy pymysql &&
-             mlflow server 
-             --host 0.0.0.0 
-             --port 5000 
-             --backend-store-uri sqlite:///mlruns/mlflow.db 
-             --default-artifact-root ./mlruns"
     ports:
       - "5000:5000"
     volumes:
       - ./mlruns:/mlruns
     restart: always
 
-  # Service 2: The Flask Prediction Application
   iris_predictor_app:
-    # This now pulls the image your GitHub Actions workflow pushed to Docker Hub
     image: 2023ac05026/iris-predictor-app:latest
+    volumes:
+      # THIS LINE CREATES THE SHARED PATH FOR THE APP
+      - ./app/models:/app/models
     container_name: iris_predictor_app
     ports:
       - "5001:5001"
-    volumes:
-      - ./mlruns:/mlruns
     environment:
-      # This tells the app to connect to the mlflow_server container
       - MLFLOW_TRACKING_URI=http://mlflow_server:5000
     depends_on:
       - mlflow_server
