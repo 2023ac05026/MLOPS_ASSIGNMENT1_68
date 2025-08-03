@@ -7,7 +7,7 @@ on:
       - main
 
 jobs:
-  # New job to run the automated test suite
+  # Job 1: Run all automated tests
   test:
     runs-on: ubuntu-latest
     steps:
@@ -23,25 +23,23 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest  # Ensure pytest is installed
+          pip install pytest # Ensure pytest is installed
 
       - name: Run Pytest
         run: pytest
 
-  # This job now depends on the 'test' job
-  build-and-push:
-    needs: test  # This line makes it wait for the 'test' job to succeed
+  # Job 2: Build and push the training image (runs in parallel with the app build)
+  build-training-pipeline:
+    needs: test # Depends on the 'test' job succeeding
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Build and push Training Pipeline image
         uses: docker/build-push-action@v5
         with:
@@ -50,9 +48,22 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/training-pipeline:latest
 
+  # Job 3: Build and push the application image (runs in parallel with the training build)
+  build-app:
+    needs: test # Depends on the 'test' job succeeding
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push Flask App image
         uses: docker/build-push-action@v5
         with:
+          # The context is the root, and we specify the Dockerfile path
           context: .
           file: ./app/Dockerfile
           push: true
