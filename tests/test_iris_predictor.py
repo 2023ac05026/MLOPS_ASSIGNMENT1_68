@@ -2,7 +2,10 @@ import pytest
 from unittest.mock import patch, MagicMock
 import numpy as np
 import json
+import sys
+import os
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'app')))
 # --- Mocking Setup ---
 # 1. Create a mock model object that will be used in all tests.
 mock_model_instance = MagicMock()
