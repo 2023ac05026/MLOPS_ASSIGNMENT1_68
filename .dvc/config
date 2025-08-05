@@ -1,6 +1,0 @@
-[core]
-    remote = raw_remote
-['remote "features_remote"']
-    url = E:\coursework\sem 3\MLOPS\Assignments\MLOPS_ASSIGNMENT1_68\Data\processed
-['remote "raw_remote"']
-    url = E:\coursework\sem 3\MLOPS\Assignments\MLOPS_ASSIGNMENT1_68\Data\raw

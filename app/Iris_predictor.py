@@ -4,7 +4,7 @@ import pandas as pd
 from flask import Flask, request, jsonify, render_template, g
 import joblib
 import psutil
-#from . import database # Use a relative import to find the database module in the same directory
+from pydantic import BaseModel, Field, ValidationError
 
 from collections import deque
 import time
@@ -15,6 +15,17 @@ try:
 except ImportError:
     # This works when running the script directly (e.g., 'python app/Iris_predictor.py')
     import database
+
+# --- Pydantic Models for Input Validation ---
+class IrisFeatures(BaseModel):
+    """
+    Pydantic model for validating the input features for Iris prediction.
+    Ensures all fields are floats and are greater than zero.
+    """
+    sepal_length: float = Field(..., gt=0, description="Sepal length in cm")
+    sepal_width: float = Field(..., gt=0, description="Sepal width in cm")
+    petal_length: float = Field(..., gt=0, description="Petal length in cm")
+    petal_width: float = Field(..., gt=0, description="Petal width in cm")
 
 # --- Application Setup ---
 app = Flask(__name__)
@@ -76,42 +87,45 @@ def view_logs_html():
     logs = database.query_logs()
     return render_template('logs.html', logs=logs)
 
+
 @app.route('/predict', methods=['POST'])
 def predict():
     """Handle prediction requests from the web form."""
     if loaded_model is None:
         return render_template('index.html', prediction_text='Error: Model is not loaded.')
 
-    input_features = {
-        'sepal_length': request.form.get('sepal_length'),
-        'sepal_width': request.form.get('sepal_width'),
-        'petal_length': request.form.get('petal_length'),
-        'petal_width': request.form.get('petal_width')
-    }
-
     try:
-        # Convert to float for the model
-        numeric_features = {k: float(v) for k, v in input_features.items()}
+        # Validate the form data using the Pydantic model
+        validated_data = IrisFeatures(**request.form)
         
+        # Create a DataFrame from the validated data with the correct column names
         input_data = pd.DataFrame({
-            'sepal length (cm)': [numeric_features['sepal_length']],
-            'sepal width (cm)': [numeric_features['sepal_width']],
-            'petal length (cm)': [numeric_features['petal_length']],
-            'petal width (cm)': [numeric_features['petal_width']]
+            'sepal length (cm)': [validated_data.sepal_length],
+            'sepal width (cm)': [validated_data.sepal_width],
+            'petal length (cm)': [validated_data.petal_length],
+            'petal width (cm)': [validated_data.petal_width]
         })
 
         prediction_code = loaded_model.predict(input_data)[0]
         predicted_species = TARGET_NAMES[prediction_code]
 
         # Log the successful prediction to the database
-        database.log_prediction('form', input_features, predicted_species, status='SUCCESS')
+        database.log_prediction('form', validated_data.model_dump(), predicted_species, status='SUCCESS')
 
         return render_template('index.html',
                                prediction_text=f'Predicted Species: {predicted_species}')
 
+    except ValidationError as e:
+        # Log the validation error to the database
+        database.log_prediction('form', request.form.to_dict(), {'error': e.errors()}, status='VALIDATION_ERROR')
+        # Return a user-friendly error message for the form
+        error_messages = [f"{err['loc'][0]}: {err['msg']}" for err in e.errors()]
+        return render_template('index.html',
+                               prediction_text=f'Input Validation Error: {", ".join(error_messages)}')
+
     except Exception as e:
-        # Log the error to the database
-        database.log_prediction('form', input_features, {'error': str(e)}, status='ERROR')
+        # Log other errors to the database (e.g., model prediction failed)
+        database.log_prediction('form', request.form.to_dict(), {'error': str(e)}, status='ERROR')
         return render_template('index.html',
                                prediction_text=f'Error: {str(e)}')
 
@@ -122,8 +136,23 @@ def api_predict():
          return jsonify({'error': 'Model is not loaded'}), 500
 
     data = request.get_json(force=True)
+    
     try:
-        input_data = pd.DataFrame(data)
+        if isinstance(data, list):
+            validated_data_list = [IrisFeatures(**item) for item in data]
+            input_df_dict = [item.model_dump() for item in validated_data_list]
+        else:
+            validated_data = IrisFeatures(**data)
+            input_df_dict = [validated_data.model_dump()]
+
+        # Create DataFrame from the Pydantic models' data and rename columns
+        input_data = pd.DataFrame(input_df_dict).rename(columns={
+            'sepal_length': 'sepal length (cm)',
+            'sepal_width': 'sepal width (cm)',
+            'petal_length': 'petal length (cm)',
+            'petal_width': 'petal width (cm)'
+        })
+        
         prediction = loaded_model.predict(input_data)
         output = [TARGET_NAMES[p] for p in prediction]
         
@@ -132,10 +161,16 @@ def api_predict():
         
         return jsonify(output)
 
+    except ValidationError as e:
+        # Log the validation error and return a 400 Bad Request with details
+        database.log_prediction('api', data, {'error': e.errors()}, status='VALIDATION_ERROR')
+        return jsonify({'error': e.errors()}), 400
+        
     except Exception as e:
-        # Log the API error to the database
+        # Log the general API error to the database
         database.log_prediction('api', data, {'error': str(e)}, status='ERROR')
-        return jsonify({'error': str(e)})
+        return jsonify({'error': str(e)}), 500
+        
 @app.route('/metrics')
 def metrics_json():
     """Returns system metrics as a JSON object."""

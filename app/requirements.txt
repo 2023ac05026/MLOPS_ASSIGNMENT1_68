@@ -4,3 +4,4 @@ mlflow
 pathlib
 joblib
 psutil
+pydantic
