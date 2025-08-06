@@ -11,10 +11,11 @@ import time
 
 try:
     # This works when running as a package (e.g., with 'flask run' or in Docker)
-    from . import database
+    from . import database, metrics
 except ImportError:
     # This works when running the script directly (e.g., 'python app/Iris_predictor.py')
     import database
+    import metrics
 
 # --- Pydantic Models for Input Validation ---
 class IrisFeatures(BaseModel):
@@ -32,6 +33,8 @@ app = Flask(__name__)
 # Register the database functions with the Flask app instance
 database.init_app(app)
 
+# Register the metrics blueprint with the main app
+metrics.init_metrics(app)
 # Create a deque to store the last 100 response times
 response_times = deque(maxlen=100)
 # --- Model Loading ---
@@ -171,7 +174,7 @@ def api_predict():
         database.log_prediction('api', data, {'error': str(e)}, status='ERROR')
         return jsonify({'error': str(e)}), 500
         
-@app.route('/metrics')
+'''@app.route('/metrics')
 def metrics_json():
     """Returns system metrics as a JSON object."""
     cpu_percent = psutil.cpu_percent(interval=1)
@@ -195,7 +198,7 @@ def metrics_json():
             'percent': disk_info.percent
         },
         'avg_response_time_ms': avg_response_time
-    })
+    })'''
 
 @app.route('/metrics_ui')
 def metrics_ui():
