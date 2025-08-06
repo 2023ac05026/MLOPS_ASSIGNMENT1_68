@@ -68,7 +68,7 @@ def test_predict_endpoint_with_invalid_input(client):
     assert response.status_code == 200
     # The model's predict method should not be called with invalid input
     mock_model_instance.predict.assert_not_called()
-    assert b'Error: could not convert string to float' in response.data
+    assert b'Input Validation Error: sepal_length: Input should be a valid number, unable to parse string as a number' in response.data
 
 def test_api_predict_endpoint(client):
     """
@@ -76,11 +76,12 @@ def test_api_predict_endpoint(client):
     """
     # Configure the mock to return class '1' (versicolor) for this test
     mock_model_instance.predict.return_value = np.array([1])
+    # The API now expects keys to match the Pydantic model
     test_data = {
-        'sepal length (cm)': [5.1],
-        'sepal width (cm)': [3.5],
-        'petal length (cm)': [1.4],
-        'petal width (cm)': [0.2]
+        'sepal_length': 5.1,
+        'sepal_width': 3.5,
+        'petal_length': 1.4,
+        'petal_width': 0.2
     }
     response = client.post('/api/predict', json=test_data)
     json_data = response.get_json()
@@ -95,12 +96,21 @@ def test_api_predict_with_multiple_inputs(client):
     """
     # Configure the mock to return predictions for two inputs: 'setosa' (0) and 'virginica' (2)
     mock_model_instance.predict.return_value = np.array([0, 2])
-    test_data = {
-        'sepal length (cm)': [5.1, 7.0],
-        'sepal width (cm)': [3.5, 3.2],
-        'petal length (cm)': [1.4, 4.7],
-        'petal width (cm)': [0.2, 1.4]
-    }
+    # The API now expects a list of dictionaries with keys that match the Pydantic model
+    test_data = [
+        {
+            'sepal_length': 5.1,
+            'sepal_width': 3.5,
+            'petal_length': 1.4,
+            'petal_width': 0.2
+        },
+        {
+            'sepal_length': 7.0,
+            'sepal_width': 3.2,
+            'petal_length': 4.7,
+            'petal_width': 1.4
+        }
+    ]
     response = client.post('/api/predict', json=test_data)
     json_data = response.get_json()
 

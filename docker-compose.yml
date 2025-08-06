@@ -25,3 +25,17 @@ services:
     depends_on:
       - mlflow_server
     restart: always
+
+  prometheus: # NEW SERVICE: Prometheus monitoring server
+    image: prom/prometheus:latest # Uses the official Prometheus Docker image
+    container_name: prometheus
+    ports:
+      - "9090:9090" # Maps host port 9090 to container port 9090 for accessing the Prometheus UI
+    volumes:
+      # Mounts your local prometheus.yml config file into the container's expected path
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml 
+    command: # Specifies the command Prometheus will execute on startup
+      - '--config.file=/etc/prometheus/prometheus.yml' # Tells Prometheus to use the mounted config file
+      - '--web.enable-remote-write-receiver' # Optional: Enables remote write capabilities (not strictly needed for this setup)
+    depends_on: # Ensures the iris_predictor_app starts before Prometheus
+      - iris_predictor_app

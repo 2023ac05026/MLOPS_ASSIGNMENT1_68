@@ -5,3 +5,4 @@ pathlib
 joblib
 psutil
 pydantic
+prometheus_client
