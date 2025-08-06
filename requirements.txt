@@ -16,3 +16,6 @@ flask
 # Testing & Linting
 pytest
 
+#monitoring
+prometheus_client
+
