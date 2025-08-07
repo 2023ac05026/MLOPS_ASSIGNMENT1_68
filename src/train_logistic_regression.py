@@ -6,6 +6,10 @@ import mlflow
 import mlflow.sklearn
 import os
 from pathlib import Path
+from datetime import datetime
+
+
+now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 def train_model(data_path):
     """
@@ -21,7 +25,7 @@ def train_model(data_path):
     # Enable MLflow autologging for this training session
     mlflow.autolog()
 
-    with mlflow.start_run(log_system_metrics=True) as run:
+    with mlflow.start_run(log_system_metrics=True , run_name=f"LogisticRegression_{now}") as run:
         # Load Data
         df = pd.read_csv(data_path)
         X = df.drop("target", axis=1)
