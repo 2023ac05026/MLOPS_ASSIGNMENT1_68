@@ -58,7 +58,6 @@ def train_rf_model(data_path):
         mlflow.log_params(best_params)
         mlflow.log_metric("test_set_accuracy", test_accuracy)
         mlflow.log_inputs()
-        mlflow.log_outputs()
         mlflow.log_trace()
         mlflow.log_artifacts("model_randomforest")
         
