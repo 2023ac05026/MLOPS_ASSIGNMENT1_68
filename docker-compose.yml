@@ -39,3 +39,18 @@ services:
       - '--web.enable-remote-write-receiver' # Optional: Enables remote write capabilities (not strictly needed for this setup)
     depends_on: # Ensures the iris_predictor_app starts before Prometheus
       - iris_predictor_app
+
+  grafana:  # New Grafana service
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"  # Exposes Grafana on port 3000
+    volumes:
+      # Optional: Persist Grafana data
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus # Ensure Prometheus is running before Grafana starts
+    restart: always
+
+volumes:
+  grafana_data: {}

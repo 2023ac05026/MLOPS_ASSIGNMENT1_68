@@ -22,7 +22,7 @@ def train_rf_model(data_path):
     # Enable MLflow autologging for this training session
     mlflow.autolog()
 
-    with mlflow.start_run() as run:
+    with mlflow.start_run(log_system_metrics=True) as run:
         # Load Data
         df = pd.read_csv(data_path)
         X = df.drop("target", axis=1)
@@ -57,6 +57,10 @@ def train_rf_model(data_path):
         # Manually log key metrics and params (autolog handles the rest)
         mlflow.log_params(best_params)
         mlflow.log_metric("test_set_accuracy", test_accuracy)
+        mlflow.log_inputs()
+        mlflow.log_outputs()
+        mlflow.log_trace()
+        mlflow.log_artifacts("model_randomforest")
         
         print(f"Test Set Accuracy: {test_accuracy:.4f}")
         print("Model saved to run:", run.info.run_id)
