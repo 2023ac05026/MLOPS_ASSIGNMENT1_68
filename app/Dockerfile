@@ -1,7 +1,8 @@
 # app/Dockerfile
 FROM python:3.11-slim
 
-WORKDIR /app
+#WORKDIR /app
+WORKDIR /usr/src/app
 
 # Copy requirements from the build context (which is now './app')
 COPY requirements.txt .
