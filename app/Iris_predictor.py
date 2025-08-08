@@ -30,8 +30,14 @@ class IrisFeatures(BaseModel):
 
 # --- Application Setup ---
 app = Flask(__name__)
+
+with app.app_context():
+    database.init_db()
+    
 # Register the database functions with the Flask app instance
 database.init_app(app)
+
+
 
 # Register the metrics blueprint with the main app
 metrics.init_metrics(app)
