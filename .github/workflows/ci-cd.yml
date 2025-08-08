@@ -29,7 +29,7 @@ jobs:
         run: pytest
 
   # Job 2: Build and push the training image (runs in parallel with the app build)
-  build-training-pipeline:
+  build-push-To-Docker-training-pipeline:
     needs: test # Depends on the 'test' job succeeding
     runs-on: ubuntu-latest
     steps:
@@ -49,7 +49,7 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/training-pipeline:latest
 
   # Job 3: Build and push the application image (runs in parallel with the training build)
-  build-app:
+  build-push-To-Docker-app:
     needs: test # Depends on the 'test' job succeeding
     runs-on: ubuntu-latest
     steps:
