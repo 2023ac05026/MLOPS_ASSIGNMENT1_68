@@ -1,2 +1,6 @@
+[core]
+    remote = local_storage
 ['remote "local_iris_storage"']
     url = D:/Iris_data
+['remote "local_storage"']
+    url = D:\Iris_data
