@@ -6,6 +6,7 @@ joblib
 dvc[all]
 ipykernel
 psutil
+gunicorn
 
 # Experiment Tracking
 mlflow

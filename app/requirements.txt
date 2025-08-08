@@ -6,3 +6,4 @@ joblib
 psutil
 pydantic
 prometheus_client
+gunicorn
